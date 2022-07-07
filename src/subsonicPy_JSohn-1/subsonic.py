@@ -128,4 +128,3 @@ class subsonic:
         result = ET.fromstring(result.text)
         for type in result.findall("scanStatus"):
             return(type.get("scanning") == "true")
-                
