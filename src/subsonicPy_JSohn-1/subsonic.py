@@ -103,7 +103,6 @@ class subsonic:
         print(name)
         print("------")
 
-
     def createPlaylist(self, name):
         return requests.post(self.request("createPlaylist", [{"head": "name", "content": [name]}]))
 
