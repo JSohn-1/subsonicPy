@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Access to a subsonic api"
 readme = "README.md"
-license = { file="LICENSE" }
+license = { file="LICENSE.md" }
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -19,5 +19,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/pypa/sampleproject"
-"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
+"Homepage" = "https://github.com/JSohn-1/subsonicPy"
+"Bug Tracker" = "https://github.com/JSohn-1/subsonicPy/issues"
