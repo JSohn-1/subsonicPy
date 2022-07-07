@@ -2,3 +2,22 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project]
+name = subsonicPy_Jsohn"
+version = "0.0.1"
+authors = [
+  { name="Jacob Sohn", email="proepicgamer1@gmail.com" },
+]
+description = "Access to a subsonic api"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/pypa/sampleproject"
+"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
