@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "subsonicPy"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Jacob Sohn", email="proepicgamer1@gmail.com" },
 ]
