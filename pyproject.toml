@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = subsonicPy_Jsohn"
+name = "subsonicPy_Jsohn"
 version = "0.0.1"
 authors = [
   { name="Jacob Sohn", email="proepicgamer1@gmail.com" },
