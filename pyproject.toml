@@ -1,10 +1,15 @@
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+dependencies = [
+  "pytaglib",
+  "requests",
+  "xmltodict"
+  ]
 
 [project]
 name = "subsonicPy"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Jacob Sohn", email="proepicgamer1@gmail.com" },
 ]
