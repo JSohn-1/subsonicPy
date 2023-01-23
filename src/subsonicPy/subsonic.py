@@ -8,7 +8,7 @@ import urllib.parse
 import taglib
 import os
 
-class subsonic:
+class SubsonicClient:
     def __init__(self, base_url, username, password, use_salt=True):
         self.base_url = base_url
         self.username = username
@@ -43,9 +43,9 @@ class subsonic:
         #print(encoded_params)
 
         response.raise_for_status()
-
+        response.encoding = 'utf-8'
         data = xmltodict.parse(response.text)
-        self._decode_html(data)
+        #self._decode_html(data)
 
         """
         if "subsonic-response" in data and "error" in data["subsonic-response"]:
@@ -158,10 +158,7 @@ class subsonic:
         Add a list of songs to a playlist.
         """
         params = {"playlistId": playlist_id}
-        """
-        for i, song_id in enumerate(song_ids):
-            params[f"songId_{i+1}"] = song_id
-        """
+
         params["songIdToAdd"] = song_id
 
         data = self._make_request("updatePlaylist", params, method="POST")
@@ -181,10 +178,10 @@ class subsonic:
 
     def getPlaylist(self, id):
         params = {"id": id}
-        data = self.make_request("getPlaylist", params)
+        data = self._make_request("getPlaylist", params)
         if "error" in data:
             raise Exception(f"{data['code']}: {data['@message']}")
-        return data["playlist"]
+        return data['subsonic-response']["playlist"]
 
     def startScan(self):
         """
@@ -259,14 +256,14 @@ class subsonic:
     def findSongId(self, song_name):
         offset = 0
         while True:
-            results = self.search(song_name, song_offset=offset)['song']
+            results = self.search(song_name, artist_count=0, album_count=0, song_offset=offset)['song']
             
             for song in results:
                 if song['@title'] == song_name:
                     return song['@id']
 
             offset += 20
-            if len(results['song']) < 20:
+            if len(results) < 20:
                 break
         raise Exception(f"Song '{song_name}' not found")
 
@@ -284,28 +281,28 @@ class subsonic:
         """
         offset = 0
         while True:
-            results = self.search(album_name, album_offset=offset)['album']
+            results = self.search(album_name, song_count=0, artist_count=0, album_offset=offset)['album']
             
             for album in results:
                 if album['@title'] == album_name:
                     return album['@id']
 
             offset += 20
-            if len(results['album']) < 20:
+            if len(results) < 20:
                 break
         raise Exception(f"Album '{album_name}' not found")
 
     def findArtistId(self, artist_name):
         offset = 0
         while True:
-            results = self.search(artist_name, artist_offset=offset)['artist']
+            results = self.search(artist_name, song_count=0, album_count=0, artist_offset=offset)['artist']
             
             for artist in results:
                 if artist['@name'] == artist_name:
                     return artist['@id']
 
             offset += 20
-            if len(results['artist']) < 20:
+            if len(results) < 20:
                 break
         raise Exception(f"Artist '{artist_name}' not found")
 
@@ -370,9 +367,33 @@ class subsonic:
 
         for playlist in data:
             if playlist["@name"] == playlist_name:
-                return True
+                if username is not None and playlist["@owner"] == username:
+                    return True
+                elif username is None:
+                    return True
 
         return False
+
+    def is_song_in_playlist(self, playlist_id, song_id, index=None):
+        playlist = self.getPlaylist(playlist_id)
+        # print(playlist)
+        if 'entry' not in playlist:
+            return False
+
+        song_list = playlist['entry']
+        if isinstance(song_list, dict):
+            song_list = [song_list]
+
+        song_ids = [song['@id'] for song in song_list]
+
+        if index is not None:
+            if len(song_ids) - 1 >= index:
+
+                return song_id == song_ids[index]
+            else:
+                return False
+        else:
+            return song_id in song_ids
 
     def createPlaylistFromM3U(self, m3u_file, replace=False, playlist_name=None, own=True):
         """
@@ -395,7 +416,7 @@ class subsonic:
             username = None
 
         if replace and self.playlist_exists(playlist_name, username):
-            self.deletePlaylist(playlist_name)
+            self.deletePlaylist(self.findPlaylistId(playlist_name))
         elif not replace and self.playlist_exists(playlist_name, username):
             playlist_names = self.getPlaylists(username)
             i = 1
@@ -411,23 +432,26 @@ class subsonic:
         playlist_id = self.findPlaylistId(playlist_name, username)
 
         # Read the M3U file and add the songs to the playlist
-        with open(m3u_file, "r") as f:
-            #print("found")
+        with open(m3u_file, "r", encoding='utf-8') as f:
+            totalSongs = 0
             for line in f:
-                """
-                # Skip lines that don't contain song file paths
-                if not line.startswith("/"):
-                    continue
-                """
+                
                 # Open the song file and retrieve the title tag
                 try:
                     song_file = taglib.File(line.strip())
-                    title = song_file.tags["TITLE"][0]
-
-                    # Search for the song by title and add it to the playlist using its ID
-                    id = self.findSongId(title)
-                    self.addToPlaylist(playlist_id, id)
-                except Exception:
+                except:
                     continue
+                
+                # Once title is recorded, closes the song to reduce memory usage and allow other programs to access the files
+                title = song_file.tags["TITLE"][0]                    
+                song_file.close()
 
+                id = self.findSongId(title)
+                # Keeps looping until the playlist is actually updated. Weird problem where the update wouldn't actually happen for some reason
+                while not self.is_song_in_playlist(playlist_id, id, index=totalSongs):
+                    self.addToPlaylist(playlist_id, id)
+
+                totalSongs += 1
+
+        print(f"Total songs: {totalSongs}")
         return playlist_id
